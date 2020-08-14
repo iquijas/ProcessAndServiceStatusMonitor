@@ -7,18 +7,27 @@ namespace StatusMonitor
     {
         static void Main(string[] args)
         {
+            string WMI_EVENT_QUERY ="";
+
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: ServiceStatusMonitor  ");
+                Console.WriteLine("Usage: StatusMonitor -s|-p servicename|processname");
                 Environment.Exit(0);
             }
-            string WMI_EVENT_QUERY = @"SELECT * FROM __InstanceModificationEvent
-                WITHIN 1 WHERE TargetInstance ISA 'Win32_Service'";
-
-            string WMI_EVENT_QUERY_WITH_SERVICE_NAME = WMI_EVENT_QUERY
-                    + " and TargetInstance.Name = '{0}'";
+            switch (args[0])
+            {
+                case "-s": WMI_EVENT_QUERY = @"SELECT * FROM __InstanceModificationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Service' and TargetInstance.Name = '{0}'";
+                    break;
+                case "-p": WMI_EVENT_QUERY = @"Select * FROM win32_ProcessTrace where processname = '{0}'";
+                    break;
+                default:
+                    Console.WriteLine("Usage: StatusMonitor -s|-p servicename|processname");
+                    Environment.Exit(0);
+                    break;
+            }
+            
             WqlEventQuery serviceModificationEvent =
-                    new WqlEventQuery(string.Format(WMI_EVENT_QUERY_WITH_SERVICE_NAME, args[0]));
+                    new WqlEventQuery(string.Format(WMI_EVENT_QUERY, args[1]));
             ManagementEventWatcher eventWatcher =
                     new ManagementEventWatcher(serviceModificationEvent);
             eventWatcher.EventArrived +=
@@ -32,33 +41,10 @@ namespace StatusMonitor
         {
             string eventType = e.NewEvent.ClassPath.ClassName;
 
-            switch (eventType)
-            {
-                case "__InstanceCreationEvent":
-
-                    Console.BackgroundColor = ConsoleColor.Blue;
-                    Console.WriteLine("'{0}' Service created ....",
-                            Environment.GetCommandLineArgs()[1]);
-                    Console.ResetColor();
-                    break;
-                case "__InstanceDeletionEvent":
-
-                    Console.BackgroundColor = ConsoleColor.Green;
-                    Console.WriteLine("'{0}' Service deleted ....",
-                        Environment.GetCommandLineArgs()[1]);
-                    Console.ResetColor();
-                    break;
-
-                case "__InstanceModificationEvent":
-
-                    Console.BackgroundColor = ConsoleColor.Blue;
-                    ManagementBaseObject obj = (ManagementBaseObject)e.NewEvent["TargetInstance"];
-                    Console.WriteLine("'{0}' Service Modified ( {1} )",
-                        Environment.GetCommandLineArgs()[1], obj["State"]);
-                    Console.ResetColor();
-                    break;
-            }
-
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine("{0} " + eventType,
+                            Environment.GetCommandLineArgs()[2]);
+            Console.ResetColor();
         }
     }
 }
