@@ -32,7 +32,7 @@ namespace StatusMonitor
                     new ManagementEventWatcher(serviceModificationEvent);
             eventWatcher.EventArrived +=
                     new EventArrivedEventHandler(Watcher_EventArrived);
-            Console.WriteLine("Waiting for service status change events ...");
+            Console.WriteLine("Waiting for status change events ...");
             eventWatcher.Start();
             Console.ReadLine();
         }
